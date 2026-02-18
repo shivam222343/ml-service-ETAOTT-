@@ -19,8 +19,6 @@ cloudinary.config(
     secure=True
 )
 
-# Load model from shared loader
-from model_loader import model
 
 def setup_ffmpeg():
     """Ensure FFmpeg is available in the environment."""

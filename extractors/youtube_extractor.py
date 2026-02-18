@@ -87,9 +87,10 @@ def extract_youtube(video_url):
             }
 
         # 2. Transcribe with Whisper
-        from model_loader import model
+        from model_loader import get_whisper_model
+        whisper_model = get_whisper_model()
         print(f"🎙️ Transcribing {job_id}: {metadata['title']}")
-        result = model.transcribe(audio_path, fp16=False)
+        result = whisper_model.transcribe(audio_path, fp16=False)
 
         return {
             "success": True,
