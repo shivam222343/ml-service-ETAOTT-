@@ -44,6 +44,9 @@ def extract_youtube(video_url):
     # Ensure FFmpeg is available
     setup_ffmpeg()
     
+    # Add cookies support if file exists in ml-service root
+    cookies_path = os.path.abspath("youtube_cookies.txt")
+    
     # yt-dlp options - output to specific job directory
     ydl_opts = {
         'format': 'bestaudio/best',
@@ -56,16 +59,23 @@ def extract_youtube(video_url):
         'quiet': True,
         'no_warnings': True,
         'nocheckcertificate': True,
+        # Use cookies if provided to bypass "Sign in" challenges on Render
+        'cookiefile': cookies_path if os.path.exists(cookies_path) else None,
         # Updated to bypass aggressive bot detection
         'extractor_args': {
             'youtube': {
-                'player_client': ['ios', 'web_creator'],
+                'player_client': ['android', 'mweb'],
                 'player_skip': ['webpage', 'configs'],
                 'skip': ['dash', 'hls']
             }
         },
-        'user_agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Mobile/15E148 Safari/604.1',
+        'user_agent': 'Mozilla/5.0 (Linux; Android 12; Pixel 6 Build/SD1A.210817.036) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.61 Mobile Safari/537.36',
         'referer': 'https://www.youtube.com/',
+        'http_headers': {
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-us,en;q=0.5',
+            'Sec-Fetch-Mode': 'navigate',
+        }
     }
 
     audio_path = None
@@ -114,10 +124,21 @@ def extract_youtube(video_url):
         }
 
     except Exception as e:
-        print(f"❌ YouTube extraction error ({job_id}): {str(e)}")
+        error_msg = str(e)
+        print(f"❌ YouTube extraction error ({job_id}): {error_msg}")
+        
+        # Add helpful tip for Render/Bot detection issues
+        if "Sign in to confirm you’re not a bot" in error_msg or "403" in error_msg:
+            error_msg = (
+                "YouTube bot detection blocked the request. "
+                "TIP: Since this is running on Render, YouTube has flagged the server IP. "
+                "To fix: Export your YouTube cookies using a 'Get cookies.txt' browser extension, "
+                "save it as 'youtube_cookies.txt' in the ml-service folder, and redeploy."
+            )
+            
         return {
             "success": False,
-            "error": str(e)
+            "error": error_msg
         }
     finally:
         # Aggressive cleanup of only this job's directory
