@@ -21,10 +21,16 @@ except ImportError:
     YOUTUBE_API_AVAILABLE = False
     HttpError = Exception  # Fallback
 
-# Initialize semantic search model (better than all-MiniLM-L6-v2)
-print("⏳ Loading YouTube Semantic Search Model (all-mpnet-base-v2)...")
-semantic_model = SentenceTransformer('sentence-transformers/all-mpnet-base-v2')
-print("✅ Model loaded successfully!")
+# Lightweight semantic search model (all-MiniLM-L6-v2 is ~90MB vs 420MB for mpnet)
+LIGHT_MODEL_NAME = 'all-MiniLM-L6-v2'
+_semantic_model = None
+
+def get_semantic_model():
+    global _semantic_model
+    if _semantic_model is None:
+        print(f"⏳ Loading Semantic Search Model ({LIGHT_MODEL_NAME})...")
+        _semantic_model = SentenceTransformer(LIGHT_MODEL_NAME)
+    return _semantic_model
 
 # YouTube API configuration
 YOUTUBE_API_KEY = os.getenv('YOUTUBE_API_KEY', '')  # Add to .env file
@@ -35,7 +41,7 @@ class YouTubeSemanticSearch:
     """
     
     def __init__(self):
-        self.model = semantic_model
+        self._model = None
         self.youtube = None
         if YOUTUBE_API_AVAILABLE and YOUTUBE_API_KEY:
             try:
@@ -274,7 +280,8 @@ class YouTubeSemanticSearch:
         
         # 2. Generate query embedding
         print(f"🔍 Generating embedding for: '{semantic_context[:100]}...'")
-        query_embedding = self.model.encode(semantic_context, convert_to_tensor=True)
+        model = get_semantic_model()
+        query_embedding = model.encode(semantic_context, convert_to_tensor=True)
         
         # 3. Build optimized search query
         search_parts = [query]
@@ -312,10 +319,11 @@ class YouTubeSemanticSearch:
         # 6. Calculate semantic similarity for each video
         scored_videos = []
         
+        model = get_semantic_model()
         for video in videos:
             # Generate video embedding from title + description
             video_text = f"{video['title']} {video['description'][:500]}"
-            video_embedding = self.model.encode(video_text, convert_to_tensor=True)
+            video_embedding = model.encode(video_text, convert_to_tensor=True)
             
             # Calculate cosine similarity
             semantic_score = util.cos_sim(query_embedding, video_embedding).item()

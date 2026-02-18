@@ -43,11 +43,15 @@ class ExtractionResponse(BaseModel):
 async def root():
     return {"status": "online", "message": "Eta ML Service is running"}
 
-from sentence_transformers import SentenceTransformer
+# Lightweight Embedding Model (Shared across app)
+_embed_model = None
 
-# Initialize embedding model (Rule 1 & Case 1)
-print("⏳ Loading Embedding model (all-MiniLM-L6-v2)...")
-embed_model = SentenceTransformer('all-MiniLM-L6-v2')
+def get_embed_model():
+    global _embed_model
+    if _embed_model is None:
+        print("⏳ Loading Embedding model (all-MiniLM-L6-v2)...")
+        _embed_model = SentenceTransformer('all-MiniLM-L6-v2')
+    return _embed_model
 
 class EmbeddingRequest(BaseModel):
     text: str
@@ -55,7 +59,8 @@ class EmbeddingRequest(BaseModel):
 @app.post("/embeddings")
 def get_embeddings(request: EmbeddingRequest):
     try:
-        embedding = embed_model.encode(request.text).tolist()
+        model = get_embed_model()
+        embedding = model.encode(request.text).tolist()
         return {"success": True, "embedding": embedding}
     except Exception as e:
         return {"success": False, "error": str(e)}
