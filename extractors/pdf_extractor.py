@@ -1,7 +1,6 @@
 import fitz  # PyMuPDF
 from PIL import Image
-from transformers import AutoProcessor, AutoModelForTokenClassification
-import torch
+# transformers and torch removed as they were unused or heavy
 import requests
 from io import BytesIO
 import os

@@ -1,6 +1,6 @@
 import yt_dlp
 import os
-import whisper
+# whisper is lazy-loaded
 import json
 import uuid
 import shutil

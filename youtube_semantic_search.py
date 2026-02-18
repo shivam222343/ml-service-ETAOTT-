@@ -5,8 +5,7 @@ Uses state-of-the-art NLP models for accurate video recommendations
 
 import re
 from typing import List, Dict, Optional
-from sentence_transformers import SentenceTransformer, util
-import torch
+# sentence_transformers and torch are lazy-loaded
 import os
 from datetime import datetime, timedelta
 
@@ -29,6 +28,7 @@ def get_semantic_model():
     global _semantic_model
     if _semantic_model is None:
         print(f"⏳ Loading Semantic Search Model ({LIGHT_MODEL_NAME})...")
+        from sentence_transformers import SentenceTransformer
         _semantic_model = SentenceTransformer(LIGHT_MODEL_NAME)
     return _semantic_model
 
@@ -280,6 +280,7 @@ class YouTubeSemanticSearch:
         
         # 2. Generate query embedding
         print(f"🔍 Generating embedding for: '{semantic_context[:100]}...'")
+        from sentence_transformers import util
         model = get_semantic_model()
         query_embedding = model.encode(semantic_context, convert_to_tensor=True)
         
@@ -320,6 +321,7 @@ class YouTubeSemanticSearch:
         scored_videos = []
         
         model = get_semantic_model()
+        from sentence_transformers import util
         for video in videos:
             # Generate video embedding from title + description
             video_text = f"{video['title']} {video['description'][:500]}"
@@ -419,8 +421,14 @@ class YouTubeSemanticSearch:
         return top_videos
 
 
-# Global instance
-youtube_search = YouTubeSemanticSearch()
+# Global instance is now lazy-loaded
+_youtube_search_instance = None
+
+def get_youtube_search_instance():
+    global _youtube_search_instance
+    if _youtube_search_instance is None:
+        _youtube_search_instance = YouTubeSemanticSearch()
+    return _youtube_search_instance
 
 
 def search_videos(
@@ -435,7 +443,7 @@ def search_videos(
     """
     Main entry point for semantic video search
     """
-    return youtube_search.semantic_search(
+    return get_youtube_search_instance().semantic_search(
         query=query,
         selected_text=selected_text,
         transcript_segment=transcript_segment,

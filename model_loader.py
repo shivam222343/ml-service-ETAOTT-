@@ -1,4 +1,4 @@
-import whisper
+# whisper is lazy-loaded
 import os
 
 _model = None
@@ -7,6 +7,7 @@ def get_whisper_model():
     global _model
     if _model is None:
         print("⏳ Loading Whisper model ('base')...")
+        import whisper
         # Use 'tiny' for Render Free tier compatibility (512MB RAM limit)
         model_name = os.getenv('WHISPER_MODEL', 'tiny')
         _model = whisper.load_model(model_name)

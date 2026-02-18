@@ -1,4 +1,4 @@
-import whisper
+# whisper is lazy-loaded
 import os
 import requests
 import cloudinary
