@@ -14,6 +14,19 @@ load_dotenv()
 
 app = FastAPI(title="Eta ML Service", description="AI-powered data extraction service")
 
+@app.on_event("startup")
+async def startup_event():
+    """
+    Ensure Playwright is installed on startup (useful for Render deployments)
+    """
+    import subprocess
+    try:
+        print("🔍 Checking Playwright browsers...")
+        subprocess.run(["playwright", "install", "chromium"], check=True)
+        print("✅ Playwright browsers ready!")
+    except Exception as e:
+        print(f"⚠️ Playwright installation skipped or failed: {e}")
+
 class ExtractionRequest(BaseModel):
     file_url: str
     content_id: str
