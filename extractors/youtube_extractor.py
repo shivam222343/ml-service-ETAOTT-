@@ -56,14 +56,16 @@ def extract_youtube(video_url):
         'quiet': True,
         'no_warnings': True,
         'nocheckcertificate': True,
-        # Updated to bypass bot detection
+        # Updated to bypass aggressive bot detection
         'extractor_args': {
             'youtube': {
-                'player_client': ['android', 'web_creator'],
+                'player_client': ['ios', 'web_creator'],
+                'player_skip': ['webpage', 'configs'],
                 'skip': ['dash', 'hls']
             }
         },
-        'user_agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36',
+        'user_agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Mobile/15E148 Safari/604.1',
+        'referer': 'https://www.youtube.com/',
     }
 
     audio_path = None
