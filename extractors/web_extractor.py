@@ -143,14 +143,15 @@ def extract_web_content(url):
             # Trying Playwright if installed
             try:
                 from playwright.sync_api import sync_playwright
+                print("🎮 Attempting Playwright screenshot...")
                 with sync_playwright() as p:
-                    browser = p.chromium.launch()
+                    browser = p.chromium.launch(headless=True)
                     context = browser.new_context(
                         user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
                         viewport={'width': 1280, 'height': 720}
                     )
                     page = context.new_page()
-                    page.goto(url, wait_until="domcontentloaded", timeout=60000)
+                    page.goto(url, wait_until="domcontentloaded", timeout=30000)
                     thumbnail_bytes = page.screenshot(type='jpeg', quality=80)
                     browser.close()
                     
@@ -164,7 +165,8 @@ def extract_web_content(url):
                     thumbnail_public_id = upload_result.get("public_id")
                     print(f"✅ Web Screenshot uploaded: {thumbnail_url}")
             except Exception as pw_err:
-                print(f"⚠️ Playwright screenshot failed: {pw_err}")
+                print(f"⚠️ Playwright screenshot skipped: {pw_err}")
+                print("ℹ️ Note: Screenshots require system-level browser dependencies not available in this environment.")
                 # Fallback: Use a generic web icon or a simple card-style image
                 # Actually, let's use a nice looking placeholder from a UI library or just skip
         except Exception as thumb_err:
