@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 import uvicorn
 from dotenv import load_dotenv
+from sentence_transformers import SentenceTransformer
 
 from extractors.pdf_extractor import extract_pdf
 from extractors.video_extractor import extract_video
@@ -17,17 +18,11 @@ app = FastAPI(title="Eta ML Service", description="AI-powered data extraction se
 @app.on_event("startup")
 async def startup_event():
     """
-    Attempt to install Playwright browser if possible, but don't crash if it fails
-    (Render non-root environments won't allow dependency installs)
+    Startup event for Eta ML Service
     """
-    import subprocess
-    try:
-        print("🔍 Attempting to initialize Playwright chromium...")
-        # We only try to install the browser, NOT the system dependencies
-        subprocess.run(["playwright", "install", "chromium"], capture_output=True)
-        print("ℹ️ Playwright browser check complete.")
-    except Exception as e:
-        print(f"⚠️ Playwright initialization skipped: {e}")
+    print("🚀 Eta ML Service starting up...")
+    # Playwright installation is now handled in render-build.sh
+    print("ℹ️ Playwright browser check skipped at startup (handled in build phase).")
 
 class ExtractionRequest(BaseModel):
     file_url: str
