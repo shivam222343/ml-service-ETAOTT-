@@ -115,11 +115,37 @@ def extract_video(file_url):
         print(f"📥 Downloading video for job {job_id}...")
         download_video(file_url, temp_video)
         
-        # 2. Transcribe with Whisper
-        print(f"🎙️ Transcribing {job_id}...")
-        from model_loader import get_whisper_model
+        # 2. Extract audio for Whisper (16kHz mono is ideal)
+        print(f"🔊 Extracting audio for transcription ({job_id})...")
+        temp_audio = os.path.join(job_dir, f"audio_{job_id}.mp3")
+        try:
+            subprocess.run([
+                "ffmpeg", "-i", temp_video,
+                "-ar", "16000",
+                "-ac", "1",
+                "-ab", "64k",
+                "-f", "mp3",
+                temp_audio, "-y"
+            ], capture_output=True, check=True)
+        except Exception as audio_err:
+            print(f"⚠️ Audio pre-extraction failed, using video file directly: {audio_err}")
+            temp_audio = temp_video
+
+        # 3. Transcribe with Whisper
+        from model_loader import get_whisper_model, get_whisper_lock
         whisper_model = get_whisper_model()
-        result = whisper_model.transcribe(temp_video, fp16=False)
+        whisper_lock = get_whisper_lock()
+        
+        # Verify audio file integrity
+        if not os.path.exists(temp_audio):
+            raise FileNotFoundError(f"Audio file missing for transcription: {temp_audio}")
+            
+        file_size = os.path.getsize(temp_audio)
+        print(f"🎙️ Transcribing {job_id} (Audio Size: {file_size / 1024 / 1024:.2f} MB)...")
+        
+        # Synchronize access to whisper model
+        with whisper_lock:
+            result = whisper_model.transcribe(temp_audio, fp16=False)
 
         # 3. Generate thumbnail from video
         thumbnail_url = None

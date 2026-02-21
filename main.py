@@ -140,6 +140,10 @@ def extract_data(request: ExtractionRequest):
             from extractors.web_extractor import extract_web_content
             result = extract_web_content(request.file_url)
             return {"success": True, "message": "Web content extraction successful", "data": result}
+        elif request.content_type == 'image':
+            from extractors.image_extractor import extract_image
+            result = extract_image(request.file_url)
+            return {"success": True, "message": "Image extraction successful", "data": result}
         else:
             raise HTTPException(status_code=400, detail=f"Unsupported content type: {request.content_type}")
             

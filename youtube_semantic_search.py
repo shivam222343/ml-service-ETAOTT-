@@ -205,16 +205,17 @@ class YouTubeSemanticSearch:
         if videos:
             return videos
         
-        # Fallback to yt-search (less accurate but doesn't require API key)
-        print("⚠️ YouTube API unavailable, using yt-search fallback...")
+        # Fallback to youtube-search-python (more stable)
+        print("⚠️ YouTube API unavailable, using youtubesearchpython fallback...")
         try:
-            import yt_search
-            results = yt_search(query)
+            from youtubesearchpython import VideosSearch
+            video_search = VideosSearch(query, limit=max_results)
+            results = video_search.result()
             
             videos = []
-            for video in results.get('videos', [])[:max_results]:
-                # Estimate duration in minutes
-                duration_str = video.get('timestamp', '0:00')
+            for video in results.get('result', []):
+                # Extract duration
+                duration_str = video.get('duration', '0:00')
                 parts = duration_str.split(':')
                 duration_minutes = 0
                 if len(parts) == 2:
@@ -222,18 +223,29 @@ class YouTubeSemanticSearch:
                 elif len(parts) == 3:
                     duration_minutes = int(parts[0]) * 60 + int(parts[1]) + int(parts[2]) / 60
                 
+                # Extract views
+                view_count_text = video.get('viewCount', {}).get('text', '0 views')
+                views = 0
+                match = re.search(r'([\d,.]+)', view_count_text)
+                if match:
+                    views_str = match.group(1).replace(',', '')
+                    views = int(float(views_str))
+                    if 'K' in view_count_text: views *= 1000
+                    elif 'M' in view_count_text: views *= 1000000
+                    elif 'B' in view_count_text: views *= 1000000000
+
                 videos.append({
-                    'id': video.get('videoId', ''),
-                    'url': video.get('url', ''),
+                    'id': video.get('id', ''),
+                    'url': video.get('link', ''),
                     'title': video.get('title', ''),
-                    'description': video.get('description', ''),
-                    'thumbnail': video.get('thumbnail', ''),
-                    'channel': video.get('author', {}).get('name', ''),
-                    'published_at': '',
+                    'description': video.get('descriptionSnippet', [{}])[0].get('text', '') if video.get('descriptionSnippet') else '',
+                    'thumbnail': video.get('thumbnails', [{}])[0].get('url', ''),
+                    'channel': video.get('channel', {}).get('name', ''),
+                    'published_at': video.get('publishedTime', ''),
                     'duration': duration_str,
                     'duration_minutes': duration_minutes,
-                    'views': video.get('views', 0),
-                    'likes': 0,  # Not available in yt-search
+                    'views': views,
+                    'likes': 0,
                     'comments': 0
                 })
             
@@ -408,8 +420,8 @@ class YouTubeSemanticSearch:
         # 9. Sort by final score
         scored_videos.sort(key=lambda x: x['final_score'], reverse=True)
         
-        # 10. Return top results
-        top_videos = scored_videos[:10]
+        # 10. Return top results (increased to support infinite scroll/more discovery)
+        top_videos = scored_videos[:30]
         
         if top_videos:
             best = top_videos[0]
